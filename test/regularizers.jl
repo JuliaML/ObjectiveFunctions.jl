@@ -17,6 +17,12 @@ l1 = L1Penalty()
 l2 = L2Penalty()
 @test isapprox(value(l2,x),4)
 
+# Smoothness
+smooth = FirstDerivL2Penalty(10)
+x = ones(10)
+@test isapprox(value(smooth,x),0)
+@test isapprox(value(FirstDerivL2Penalty(x),x),0)
+
 end # module
 
 using RegularizerTest
