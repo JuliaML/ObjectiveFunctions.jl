@@ -11,7 +11,7 @@ ElasticNetPenalty() = ElasticNetPenalty(1.0,1.0)
 
 value{T}(r::ElasticNetPenalty{T}, x::AbstractArray{T}) = r.γ1*sumabs(x)+r.γ2*sumabs2(x)
 
-function prox!{T}(r::ElasticNetPenalty{T}, x0::AbstractArray{T}, ρ::T)
+function prox!{T}(x0::AbstractArray{T}, r::ElasticNetPenalty{T}, ρ::T)
 
     # precalculate re-used factors
     thres::T = r.γ1*ρ

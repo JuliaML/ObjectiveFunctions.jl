@@ -16,6 +16,7 @@ export  SimplexConstraint,
         LinearLeastSquares,
         LinearLeastSquaresProx,
 
+        NoPenalty,
         L1Penalty,
         L2Penalty,
         ElasticNetPenalty,

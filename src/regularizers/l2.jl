@@ -12,8 +12,8 @@ L2Penalty{T<:Number}(λ::T=1.0) = L2Penalty{T}(λ)
 
 value{T}(r::L2Penalty{T}, x0::AbstractArray{T}) = r.λdiv2*sumabs2(x0)
 
-function prox!{T}(x0::AbstractArray{T}, r::L2Penalty{T}, ρ::T)
-	scale!(x0, (one(T) / (2*r.λdiv2*ρ + one(T))))
+function prox!{T}(x::AbstractArray{T}, r::L2Penalty{T}, ρ::T)
+	scale!(x, (one(T) / (convert(T,2)*r.λdiv2*ρ + one(T))))
 end
 
 
@@ -32,6 +32,6 @@ end
 
 value{T}(r::L2Prox{T}, x::AbstractArray{T}) = value(r.penalty,x)
 
-function prox!{T}(r::L2Prox{T}, x0::AbstractArray{T}, ρ::T)
-    scale!(x0, r.γ2)
+function prox!{T}(x::AbstractArray{T}, r::L2Prox{T}, ρ::T)
+    scale!(x, r.γ)
 end

@@ -3,6 +3,12 @@ module RegularizerTest
 using Base.Test
 using ObjectiveFunctions
 
+# Null Penalty
+ρ = 1.0
+x = randn(10)
+@test isapprox(x,prox(NoPenalty(),x,ρ))
+@test isapprox(zeros(length(x)),grad(NoPenalty(),x))
+
 # Elastic Net
 enet = ElasticNetPenalty(1.0,1.0)
 x = ones(8)
