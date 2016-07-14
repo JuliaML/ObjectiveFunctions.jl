@@ -6,10 +6,10 @@ Penalty on squared l2 norm, f(x) = (λ/2)⋅Σᵢ(xᵢ)²
 immutable L2Penalty{T<:Number} <: Penalty
     λdiv2::T # scale of penalty
 
-    L2Penalty(λ::T) = new(convert(T,0.5*λ))
+    L2Penalty(λ::T) = new(convert(T,0.5)*λ)
 end
+L2Penalty{T<:Number}(λ::T=1.0) = L2Penalty{T}(λ)
 
-L2Penalty{T}() = L2Penalty(one(T))
 value{T}(r::L2Penalty{T}, x0::AbstractArray{T}) = r.λdiv2*sumabs2(x0)
 
 function prox!{T}(x0::AbstractArray{T}, r::L2Penalty{T}, ρ::T)
@@ -27,11 +27,8 @@ immutable L2Prox{T<:Number} <: Penalty
     penalty::L2Penalty
     γ::T # 1/(λ*ρ + 1)
 
-    L2Prox(λ::T,ρ::T) = new(L2Penalty(λ),one(T)/(λ*ρ+one(T)))
+    L2Prox(λ::T=one(T),ρ::T=one(T)) = new(L2Penalty(λ),one(T)/(λ*ρ+one(T)))
 end
-
-L2Prox{T}() = L2Prox(one(T),one(T))
-L2Prox{T}(λ::T) = L2Prox(λ::T,one(T))
 
 value{T}(r::L2Prox{T}, x::AbstractArray{T}) = value(r.penalty,x)
 

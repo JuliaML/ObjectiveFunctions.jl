@@ -20,7 +20,7 @@ export  SimplexConstraint,
         L2Penalty,
         ElasticNetPenalty,
         NuclearNormPenalty,
-        FirstDerivPenalty,
+        FirstDerivL2Penalty,
 
         # These are defined, but not exported in LearnBase.
         # Should LearnBase export everything?
@@ -35,12 +35,12 @@ include("constraints/box.jl")
 include("constraints/unit_length.jl")
 include("constraints/affine.jl")
 
-# include("models/linear.jl")
+include("models/linear.jl")
 
-# include("regularizers/elastic_net.jl")
-# include("regularizers/l1.jl")
-# include("regularizers/l2.jl")
-# include("regularizers/nuclear_norm.jl")
-# include("regularizers/smooth.jl")
+include("regularizers/l1.jl")
+include("regularizers/l2.jl")
+include("regularizers/elastic_net.jl")
+include("regularizers/nuclear_norm.jl")
+include("regularizers/smooth.jl")
 
 end # module

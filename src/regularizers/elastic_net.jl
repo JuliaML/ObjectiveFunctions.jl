@@ -4,8 +4,10 @@ Elastic net regularization, f(x) = λ₁⋅Σᵢ|xᵢ| + 0.5⋅λ₂⋅Σᵢ(x�
 immutable ElasticNetPenalty{T<:Number} <: Penalty
     γ1::T # scale of L1 penalty, λ₁
     γ2::T # half scale of L2 penalty, 0.5⋅λ₂
-    ElasticNetPenalty(λ1=one(T),λ2=one(T)) = ElasticNetPenalty(λ1,λ2)
+    ElasticNetPenalty(λ1::T,λ2::T) = new(λ1,convert(T,0.5)*λ2)
 end
+ElasticNetPenalty{T<:Number}(λ1::T,λ2::T) = ElasticNetPenalty{T}(λ1,λ2)
+ElasticNetPenalty() = ElasticNetPenalty(1.0,1.0)
 
 value{T}(r::ElasticNetPenalty{T}, x::AbstractArray{T}) = r.γ1*sumabs(x)+r.γ2*sumabs2(x)
 

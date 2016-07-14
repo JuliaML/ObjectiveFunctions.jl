@@ -1,4 +1,4 @@
-immutable NuclearNormPenalty{T<:AbstractFloat}
+immutable NuclearNormPenalty{T<:AbstractFloat} <: Penalty
     λ::T
 end
 

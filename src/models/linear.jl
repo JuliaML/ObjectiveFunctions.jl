@@ -9,20 +9,20 @@ immutable LinearLeastSquares{T<:Number} <: Penalty
     λ::T
 end
 
-value(m::LinearLeastSquares{T},x::AbstractVecOrMat{T}) = convert(T,0.5)*m.λ*value(L2DistLoss(), m.B, m.A*x)
+value{T}(m::LinearLeastSquares{T},x::AbstractVecOrMat{T}) = convert(T,0.5)*m.λ*value(L2DistLoss(), m.B, m.A*x)
 
 """
 Proximal operator for linear least squares:
 
 argminₓ  λ/2||A*x - b||² + 1/2ρ||x - x₀||²
 """
-immutable LinearLeastSquaresProx{T<:Number,M<:AbstractMatrix{T}} <: ProxOp
+immutable LinearLeastSquaresProx{T<:Number,M<:AbstractMatrix} <: Penalty
     penalty::LinearLeastSquares{T}
     AtA_ρλI::Base.LinAlg.LU{T,M} # LU factorization of AᵀA + (1/ρλ)*I
-    AtB::Matrix{T} # Cached AᵀB
+    AtB::AbstractMatrix{T} # Cached AᵀB
     γ::T # 1/ρ⋅λ
 
-    function LinearLeastSquaresProx(p::LinearLeastSquaresProx{T}, ρ::T)
+    function LinearLeastSquaresProx(p::LinearLeastSquares{T}, ρ::T)
         A = p.A
         b = p.b
         n = size(A,2)
@@ -31,15 +31,15 @@ immutable LinearLeastSquaresProx{T<:Number,M<:AbstractMatrix{T}} <: ProxOp
         AtB = At_mul_B(A,B)
 
         # LU decomp on AᵀA + (1/λ⋅ρ)*I
-        γ::T = 2*cost.λhalf*ρ
+        γ::T = one(T)/penalty.λ*ρ
         AtA_ρλI = lufact(At_mul_B(A,A) + UniformScaling(γ))
 
-        return LeastSquaresProx(penalty,AtA_ρλI,AtB,γ)
+        new(penalty,AtA_ρλI,AtB,γ)
     end
 
 end
 
-function prox!{T}(x, p::LinearLeastSquaresProx{T})
+function prox!{T}(x::AbstractVecOrMat{T}, p::LinearLeastSquaresProx{T})
     # overwrite x
     scale!(x,p.γ)           # x *= 1/ρ⋅λ
     axpy!(one(T),p.AtB,x)   # x += AᵀB
