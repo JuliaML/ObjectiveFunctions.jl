@@ -14,12 +14,23 @@ immutable LossTransform{L<:Loss,T} <: Transformation
     loss::L
     nin::Int
     input::Node{:input,T}
+    target::Node{:target,T}
+    output::Node{:output,T}
 
     function LossTransform(loss::Loss, nin::Int)
         input = Node(:input, zeros(T, nin))
-        new(loss, nin, input)
+        target = Node(:target, zeros(T, nin))
+        output = Node(:output, zeros(T, 1))
+        output_grad(output)[1] = one(T)  # ∂L/∂L == 1
+        new(loss, nin, input, target, output)
     end
 end
+
+function transform!(lt::LossTransform, target::AbstractVector)
+    lt.output.val[1] = value(lt.loss, target, input_value(input))
+    # TODO
+end
+
 
 # TODO:
 # transform!(loss::LossTransform, args...) = ???
@@ -27,11 +38,13 @@ end
 
 # ------------------------------------------------------------------------
 
-type RegularizedObjective{T<:Transformation, L<:LossTransform, P<:Penalty}
+type RegularizedObjective{T<:Transformation, L<:LossTransform, P<:Penalty} <: Transformation
     transformation::T
     loss::L
     penalty::P
 end
+
+
 
 # TODO:
 #   - build LossTransform during construction
