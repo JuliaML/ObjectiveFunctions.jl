@@ -7,10 +7,17 @@ using Reexport
 @reexport using Penalties
 
 import LearnBase: transform!, grad!
+import Transformations: input_node, output_node
+
+export
+    LossTransform,
+    RegularizedObjective
+
+# ------------------------------------------------------------------------
 
 # this is a transformation which stores the calculated loss, as well as the gradients of the inputs
 # it can be linked to a transformation to allow easier forward/backward calcs
-immutable LossTransform{L<:Loss,T} <: Transformation
+immutable LossTransform{T,L<:Loss} <: Transformation
     loss::L
     nin::Int
     input::Node{:input,T}
@@ -21,17 +28,18 @@ immutable LossTransform{L<:Loss,T} <: Transformation
         input = Node(:input, zeros(T, nin))
         target = Node(:target, zeros(T, nin))
         output = Node(:output, zeros(T, 1))
-        output_grad(output)[1] = one(T)  # ∂L/∂L == 1
+        grad(output)[1] = one(T)  # ∂L/∂L == 1
         new(loss, nin, input, target, output)
     end
 end
 
-# this assumes that input_value(lt) is pre-populated... copy the target in
+# this assumes that input_value(lt) is pre-populated... copy the target in, then pass to no-arg version
 function transform!(lt::LossTransform, target::AbstractVector)
     copy!(value(lt.target), target)
     transform!(lt)
 end
 
+# input and target are pre-populated... compute the output value as: ∑ loss(targetᵢ, inputᵢ)
 function transform!(lt::LossTransform)
     lt.output.val[1] = sumvalue(lt.loss, value(lt.target), input_value(lt))
     lt
@@ -39,33 +47,53 @@ end
 
 # TODO: is this right??  what is Losses.deriv?
 function grad!(lt::LossTransform)
+    # update the input gradient using the values of target and input
     deriv!(grad(lt.input), lt.loss, value(lt.target), value(lt.input))
 end
 
 
 # ------------------------------------------------------------------------
 
+# TODO: should we support penalties on outputs as well as parameters?
+
+# convenience type for Empirical Risk Minimization and similar
 type RegularizedObjective{T<:Transformation, L<:LossTransform, P<:Penalty} <: Transformation
     transformation::T
     loss::L
     penalty::P
 end
 
+function RegularizedObjective(transformation::Transformation, loss::Loss, penalty::Penalty = NoPenalty())
+    # create a LossTransform and link it to the transformation output
+    lt = LossTransform{Float64,typeof(loss)}(loss, output_length(transformation))
+    link_nodes!(output_node(transformation), input_node(lt))
+
+    # return the constructed object
+    RegularizedObjective(transformation, lt, penalty)
+end
+
+input_node(obj::RegularizedObjective) = input_node(obj.transformation)
+output_node(obj::RegularizedObjective) = output_node(obj.loss)
+
 function transform!(obj::RegularizedObjective, target::AbstractVector, input::AbstractVector)
+    # forward pass through the transformation... assuming output has been linked to loss already
+    transform!(obj.transformation, input)
+
+    # loss input should be populated already... forward pass with target
+    transform!(obj.loss, target)
+
+    # add the penalty
+    total_penalty = value(obj.penalty, params(obj.transformation))
+    output_value(obj.loss)[1] += total_penalty
 end
 
-# we don't need data args because they were given to transform... check this!
+# we don't need data args because they were given or computed in transform (check this fact!)
 function grad!(obj::RegularizedObjective)
+    grad!(obj.loss)
+    grad!(obj.transformation)
+    addgrad!(grad(obj.transformation), obj.penalty, params(obj.transformation))
 end
 
-# TODO:
-#   - build LossTransform during construction
-#   - link transformation to loss
-#   - transform! should update the transformation, then compute and return the loss (without penalty?)
-#   - grad! should compute a loss derivative, then call grad!(trans, dl, penalty)
-
-
-
-
+# ------------------------------------------------------------------------
 
 end # module
