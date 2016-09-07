@@ -26,15 +26,22 @@ immutable LossTransform{L<:Loss,T} <: Transformation
     end
 end
 
+# this assumes that input_value(lt) is pre-populated... copy the target in
 function transform!(lt::LossTransform, target::AbstractVector)
-    lt.output.val[1] = value(lt.loss, target, input_value(input))
-    # TODO
+    copy!(value(lt.target), target)
+    transform!(lt)
 end
 
+function transform!(lt::LossTransform)
+    lt.output.val[1] = sumvalue(lt.loss, value(lt.target), input_value(lt))
+    lt
+end
 
-# TODO:
-# transform!(loss::LossTransform, args...) = ???
-# grad!() = ???
+# TODO: is this right??  what is Losses.deriv?
+function grad!(lt::LossTransform)
+    deriv!(grad(lt.input), lt.loss, value(lt.target), value(lt.input))
+end
+
 
 # ------------------------------------------------------------------------
 
@@ -44,7 +51,12 @@ type RegularizedObjective{T<:Transformation, L<:LossTransform, P<:Penalty} <: Tr
     penalty::P
 end
 
+function transform!(obj::RegularizedObjective, target::AbstractVector, input::AbstractVector)
+end
 
+# we don't need data args because they were given to transform... check this!
+function grad!(obj::RegularizedObjective)
+end
 
 # TODO:
 #   - build LossTransform during construction
