@@ -26,6 +26,19 @@ using Base.Test
         @show total_loss total_penalty
         @test output_value(obj)[1] ≈ total_loss + total_penalty
 
-        # TODO: test the backward pass
+        # test the backward pass
+        grad!(obj)
+        x = input_value(obj.loss)
+        ∇ = input_grad(obj.loss)
+        @show ∇
+        for i=1:nout
+            @test ∇[i] == deriv(obj.loss.loss, target[i], x[i])
+        end
+        ∇input = input_grad(obj)
+        @show ∇input
+        for i=1:nin
+            # TODO a real test
+            @test ∇input[i] != 0
+        end
     end
 end

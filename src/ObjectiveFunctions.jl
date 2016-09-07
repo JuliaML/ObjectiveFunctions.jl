@@ -20,9 +20,9 @@ export
 immutable LossTransform{T,L<:Loss} <: Transformation
     loss::L
     nin::Int
-    input::Node{:input,T}
-    target::Node{:target,T}
-    output::Node{:output,T}
+    input::Node{:input,T,1}
+    target::Node{:target,T,1}
+    output::Node{:output,T,1}
 
     function LossTransform(loss::Loss, nin::Int)
         input = Node(:input, zeros(T, nin))
@@ -91,7 +91,13 @@ end
 function grad!(obj::RegularizedObjective)
     grad!(obj.loss)
     grad!(obj.transformation)
-    addgrad!(grad(obj.transformation), obj.penalty, params(obj.transformation))
+
+    θ = params(obj.transformation)
+    ∇ = grad(obj.transformation)
+    for (i,j) in zip(eachindex(θ), eachindex(∇))
+        ∇[j] += deriv(obj.penalty, θ[i])
+    end
+    ∇
 end
 
 # ------------------------------------------------------------------------
