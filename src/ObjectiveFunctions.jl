@@ -59,7 +59,7 @@ end
 # TODO: should we support penalties on outputs as well as parameters?
 
 # convenience type for Empirical Risk Minimization and similar
-type RegularizedObjective{T<:Transformation, L<:LossTransform, P<:Penalty} <: Transformation
+type RegularizedObjective{T<:Transformation, L<:LossTransform, P<:Penalty} <: Minimizable
     transformation::T
     loss::L
     penalty::P
