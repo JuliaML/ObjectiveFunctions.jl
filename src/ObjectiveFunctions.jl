@@ -8,8 +8,8 @@ using Reexport
 @reexport using Transformations
 @reexport using Penalties
 
-import LearnBase: transform!, grad!
-import Transformations: input_node, output_node
+import LearnBase: transform!, grad, grad!
+import Transformations: input_node, output_node, params
 
 export
     LossTransform,
@@ -76,6 +76,9 @@ end
 
 input_node(obj::RegularizedObjective) = input_node(obj.transformation)
 output_node(obj::RegularizedObjective) = output_node(obj.loss)
+
+params(obj::RegularizedObjective) = params(obj.transformation)
+grad(obj::RegularizedObjective) = grad(obj.transformation)
 
 function transform!(obj::RegularizedObjective, target::AbstractVector, input::AbstractVector)
     # forward pass through the transformation... assuming output has been linked to loss already
