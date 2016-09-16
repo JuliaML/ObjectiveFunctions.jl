@@ -16,7 +16,8 @@ export
     LossTransform,
     CrossEntropy,
     RegularizedObjective,
-    objective
+    objective,
+    totalcost
 
 abstract AbstractLossTransform{T} <: Transformation
 
@@ -120,6 +121,7 @@ output_node(obj::RegularizedObjective) = output_node(obj.loss)
 
 params(obj::RegularizedObjective) = params(obj.transformation)
 grad(obj::RegularizedObjective) = grad(obj.transformation)
+totalcost(obj::RegularizedObjective) = output_value(obj.loss)[1]
 
 function transform!(obj::RegularizedObjective, target::AbstractVector, input::AbstractVector)
     # forward pass through the transformation... assuming output has been linked to loss already
