@@ -3,11 +3,11 @@ using Base.Test
 
 @testset "RegObj" begin
     let nin=2, nout=3
-        t = Affine{Float64}(nin, nout)
+        t = Affine(nin, nout)
         l = L2DistLoss()
         λ = 1e-3
         p = L2Penalty(λ)
-        obj = RegularizedObjective(t, l, p)
+        obj = objective(t, l, p)
         @show obj typeof(obj)
 
         @test output_value(t) === input_value(obj.loss)
@@ -16,11 +16,12 @@ using Base.Test
 
         input = rand(nin)
         target = rand(nout)
+        w, b = t.params.views
 
         # test the forward pass
         transform!(obj, target, input)
         @test input_value(obj) == input
-        @test output_value(t) ≈ value(t.w) * input + value(t.b)
+        @test output_value(t) ≈ w * input + b
         total_loss = sum(value(l, target[i], output_value(t)[i]) for i=1:nout)
         total_penalty = 0.5λ * sum(θᵢ^2 for θᵢ in params(t))
         @show total_loss total_penalty
