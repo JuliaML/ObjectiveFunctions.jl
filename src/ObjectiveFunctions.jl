@@ -116,6 +116,22 @@ function objective(transformation::Transformation, loss::Loss, penalty::Penalty 
     objective(transformation, lt, penalty)
 end
 
+# convenience when creating chains... auto-choose loss given final layer
+function objective(chain::Chain, penalty::Penalty = NoPenalty())
+    T = typeof(chain[end])
+    loss = if T <: Affine || T <: Activation{:identity}
+        L2DistLoss()
+    elseif T <: Activation{:logistic}
+        CrossentropyLoss()
+    elseif T <: Activation{:softmax}
+        CrossEntropy(output_length(chain[end]))
+    else
+        error("Can't pick a default loss for $T... choose it explicitly.")
+    end
+    objective(chain, loss, penalty)
+end
+
+
 input_node(obj::RegularizedObjective) = input_node(obj.transformation)
 output_node(obj::RegularizedObjective) = output_node(obj.loss)
 
@@ -123,7 +139,7 @@ params(obj::RegularizedObjective) = params(obj.transformation)
 grad(obj::RegularizedObjective) = grad(obj.transformation)
 totalcost(obj::RegularizedObjective) = output_value(obj.loss)[1]
 
-function transform!(obj::RegularizedObjective, target::AbstractVector, input::AbstractVector)
+function transform!(obj::RegularizedObjective, target::AbstractArray, input::AbstractArray)
     # forward pass through the transformation... assuming output has been linked to loss already
     transform!(obj.transformation, input)
 
@@ -133,6 +149,11 @@ function transform!(obj::RegularizedObjective, target::AbstractVector, input::Ab
     # add the penalty
     total_penalty = value(obj.penalty, params(obj.transformation))
     output_value(obj.loss)[1] += total_penalty
+end
+
+# if our target is a single value, lets convert it to a length-1 vector
+function transform!{T}(obj::RegularizedObjective, target::T, input::AbstractArray{T})
+    transform!(obj, [target], input)
 end
 
 # we don't need data args because they were given or computed in transform (check this fact!)
