@@ -161,8 +161,8 @@ function grad!(obj::RegularizedObjective)
     grad!(obj.loss)
     grad!(obj.transformation)
 
-    θ = params(obj.transformation)
-    ∇ = grad(obj.transformation)
+    θ = params(obj)
+    ∇ = grad(obj)
     for (i,j) in zip(eachindex(θ), eachindex(∇))
         ∇[j] += deriv(obj.penalty, θ[i])
     end
