@@ -47,6 +47,8 @@ immutable LossTransform{T,L<:Loss} <: AbstractLossTransform{T}
     end
 end
 
+LossTransform{L<:Loss}(loss::L, nin::Int) = LossTransform{Float64, L}(loss, nin)
+
 # input and target are pre-populated... compute the output value as: ∑ loss(targetᵢ, inputᵢ)
 function transform!(lt::LossTransform)
     lt.output.val[1] = sumvalue(lt.loss, value(lt.target), input_value(lt))
