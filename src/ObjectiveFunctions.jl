@@ -8,8 +8,8 @@ using Reexport
 @reexport using Transformations
 @reexport using Penalties
 
-import LearnBase: transform!, grad, grad!
-import Transformations: input_node, output_node, params
+import LearnBase: transform!, grad, grad!, params
+import Transformations: input_node, output_node
 
 export
     AbstractLossTransform,
