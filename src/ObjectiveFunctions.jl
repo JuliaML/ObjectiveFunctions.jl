@@ -8,11 +8,12 @@ using Reexport
 @reexport using Transformations
 @reexport using Penalties
 
-import LearnBase: transform!, grad, grad!, params
+import LearnBase: transform!, grad, grad!, params, update!
 import Transformations: input_node, output_node
 
 export
     AbstractLossTransform,
+    NoLoss,
     LossTransform,
     CrossEntropy,
     RegularizedObjective,
@@ -20,6 +21,8 @@ export
     totalcost
 
 abstract AbstractLossTransform{T} <: Transformation
+
+immutable NoLoss <: AbstractLossTransform{Void} end
 
 # this assumes that input_value(lt) is pre-populated... copy the target in, then pass to no-arg version
 function transform!(lt::AbstractLossTransform, target::AbstractVector)
@@ -133,13 +136,17 @@ function objective(chain::Chain, penalty::Penalty = NoPenalty())
     objective(chain, loss, penalty)
 end
 
+function objective(t::Transformation, nl::NoLoss, penalty::Penalty = NoPenalty())
+    RegularizedObjective(t,nl,penalty)
+end
+
 
 input_node(obj::RegularizedObjective) = input_node(obj.transformation)
-output_node(obj::RegularizedObjective) = output_node(obj.loss)
+output_node(obj::RegularizedObjective) = output_node(isa(obj.loss, NoLoss) ? obj.transformation : obj.loss)
 
 params(obj::RegularizedObjective) = params(obj.transformation)
 grad(obj::RegularizedObjective) = grad(obj.transformation)
-totalcost(obj::RegularizedObjective) = output_value(obj.loss)[1]
+totalcost(obj::RegularizedObjective) = norm(value(output_node(obj)))
 
 function transform!(obj::RegularizedObjective, target::AbstractArray, input::AbstractArray)
     # forward pass through the transformation... assuming output has been linked to loss already
@@ -158,17 +165,29 @@ function transform!{T}(obj::RegularizedObjective, target::T, input::AbstractArra
     transform!(obj, [target], input)
 end
 
+function apply_penalty(penalty::Penalty, θ, ∇)
+    for (i,j) in zip(eachindex(θ), eachindex(∇))
+        ∇[j] += deriv(penalty, θ[i])
+    end
+    ∇
+end
+
 # we don't need data args because they were given or computed in transform (check this fact!)
 function grad!(obj::RegularizedObjective)
     grad!(obj.loss)
     grad!(obj.transformation)
+    apply_penalty(obj.penalty, params(obj), grad(obj))
+end
 
-    θ = params(obj)
-    ∇ = grad(obj)
-    for (i,j) in zip(eachindex(θ), eachindex(∇))
-        ∇[j] += deriv(obj.penalty, θ[i])
-    end
-    ∇
+# handle the no-data case... probably just minimizing a function
+function update!(obj::RegularizedObjective, ::Void)
+    transform!(obj.transformation)
+
+    # output grad is ones, backwards pass
+    output_grad(obj.transformation)[:] = 1
+    grad!(obj.transformation)
+
+    apply_penalty(obj.penalty, params(obj), grad(obj))
 end
 
 # ------------------------------------------------------------------------
