@@ -9,7 +9,7 @@ using Reexport
 @reexport using Penalties
 
 import LearnBase: transform!, grad, grad!, params, update!
-import Transformations: input_node, output_node
+import Transformations: input_node, output_node, totalcost
 
 export
     AbstractLossTransform,
@@ -17,8 +17,7 @@ export
     LossTransform,
     CrossEntropy,
     RegularizedObjective,
-    objective,
-    totalcost
+    objective
 
 abstract AbstractLossTransform{T} <: Transformation
 
@@ -179,16 +178,16 @@ function grad!(obj::RegularizedObjective)
     apply_penalty(obj.penalty, params(obj), grad(obj))
 end
 
-# handle the no-data case... probably just minimizing a function
-function update!(obj::RegularizedObjective, ::Void)
-    transform!(obj.transformation)
-
-    # output grad is ones, backwards pass
-    output_grad(obj.transformation)[:] = 1
-    grad!(obj.transformation)
-
-    apply_penalty(obj.penalty, params(obj), grad(obj))
-end
+# # handle the no-data case... probably just minimizing a function
+# function update!(obj::RegularizedObjective, ::Void)
+#     transform!(obj.transformation)
+#
+#     # output grad is ones, backwards pass
+#     output_grad(obj.transformation)[:] = 1
+#     grad!(obj.transformation)
+#
+#     apply_penalty(obj.penalty, params(obj), grad(obj))
+# end
 
 # ------------------------------------------------------------------------
 
