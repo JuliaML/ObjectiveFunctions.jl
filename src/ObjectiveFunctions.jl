@@ -4,7 +4,7 @@ module ObjectiveFunctions
 
 using Reexport
 @reexport using LearnBase
-@reexport using Losses
+@reexport using LossFunctions
 @reexport using Transformations
 @reexport using Penalties
 
@@ -57,7 +57,7 @@ function transform!(lt::LossTransform)
     lt
 end
 
-# TODO: is this right??  what is Losses.deriv?
+# TODO: is this right??  what is LossFunctions.deriv?
 function grad!(lt::LossTransform)
     # update the input gradient using the values of target and input
     deriv!(grad(lt.input), lt.loss, value(lt.target), value(lt.input))
@@ -164,18 +164,18 @@ function transform!{T}(obj::RegularizedObjective, target::T, input::AbstractArra
     transform!(obj, [target], input)
 end
 
-function apply_penalty(penalty::Penalty, θ, ∇)
-    for (i,j) in zip(eachindex(θ), eachindex(∇))
-        ∇[j] += deriv(penalty, θ[i])
-    end
-    ∇
-end
+# function apply_penalty(penalty::Penalty, θ, ∇)
+#     for (i,j) in zip(eachindex(θ), eachindex(∇))
+#         ∇[j] += deriv(penalty, θ[i])
+#     end
+#     ∇
+# end
 
 # we don't need data args because they were given or computed in transform (check this fact!)
 function grad!(obj::RegularizedObjective)
     grad!(obj.loss)
     grad!(obj.transformation)
-    apply_penalty(obj.penalty, params(obj), grad(obj))
+    addgrad!(grad(obj), obj.penalty, params(obj))
 end
 
 # # handle the no-data case... probably just minimizing a function
