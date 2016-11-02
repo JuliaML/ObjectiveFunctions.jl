@@ -10,7 +10,7 @@ using Base.Test
         obj = objective(t, l, p)
         @show obj typeof(obj)
 
-        @test output_value(t) === input_value(obj.loss)
+        @test output_value(t) == input_value(obj.loss)
         @test input_length(obj.loss) == nout
         @test output_length(obj.loss) == 1
 

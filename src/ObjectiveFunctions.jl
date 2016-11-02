@@ -9,7 +9,7 @@ using Reexport
 @reexport using Penalties
 
 import LearnBase: transform!, grad, grad!, params, update!
-import Transformations: input_node, output_node, totalcost
+import Transformations: input_node, output_node, totalcost, InputNode, SumNode, OutputNode
 
 export
     AbstractLossTransform,
@@ -26,6 +26,7 @@ immutable NoLoss <: AbstractLossTransform{Void} end
 # this assumes that input_value(lt) is pre-populated... copy the target in, then pass to no-arg version
 function transform!(lt::AbstractLossTransform, target::AbstractVector)
     copy!(value(lt.target), target)
+    transform!(input_node(lt))
     transform!(lt)
 end
 
@@ -36,14 +37,14 @@ end
 immutable LossTransform{T,L<:Loss} <: AbstractLossTransform{T}
     loss::L
     nin::Int
-    input::Node{:input,T,1}
-    target::Node{:target,T,1}
-    output::Node{:output,T,1}
+    input::SumNode{T,1}
+    target::SumNode{T,1}
+    output::OutputNode{T,1}
 
     function LossTransform(loss::Loss, nin::Int)
-        input = Node(:input, zeros(T, nin))
-        target = Node(:target, zeros(T, nin))
-        output = Node(:output, zeros(T, 1))
+        input = InputNode(T, nin)
+        target = InputNode(T, nin)
+        output = OutputNode(T, 1)
         grad(output)[1] = one(T)  # ∂L/∂L == 1
         new(loss, nin, input, target, output)
     end
@@ -71,14 +72,14 @@ end
 
 immutable CrossEntropy{T} <: AbstractLossTransform{T}
     n::Int
-    input::Node{:input,T,1}
-    target::Node{:target,T,1}
-    output::Node{:output,T,1}
+    input::SumNode{T,1}
+    target::SumNode{T,1}
+    output::OutputNode{T,1}
 
     function CrossEntropy(n::Int)
-        input = Node(:input, zeros(T, n))
-        target = Node(:target, zeros(T, n))
-        output = Node(:output, zeros(T, 1))
+        input = InputNode(T, n)
+        target = InputNode(T, n)
+        output = OutputNode(T, 1)
         grad(output)[:] = one(T)  # ∂L/∂L == 1
         new(n, input, target, output)
     end
@@ -110,7 +111,8 @@ end
 
 # first link the transformation to the loss, then construct
 function objective(transformation::Transformation, lt::AbstractLossTransform, penalty::Penalty = NoPenalty())
-    link_nodes!(output_node(transformation), input_node(lt))
+    # link_nodes!(output_node(transformation), input_node(lt))
+    link_nodes!(transformation, lt)
     RegularizedObjective(transformation, lt, penalty)
 end
 
@@ -174,6 +176,7 @@ end
 # we don't need data args because they were given or computed in transform (check this fact!)
 function grad!(obj::RegularizedObjective)
     grad!(obj.loss)
+    grad!(output_node(obj.transformation))
     grad!(obj.transformation)
     addgrad!(grad(obj), obj.penalty, params(obj))
 end
