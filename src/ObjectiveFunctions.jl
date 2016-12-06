@@ -6,7 +6,7 @@ using Reexport
 @reexport using LearnBase
 @reexport using LossFunctions
 @reexport using Transformations
-@reexport using Penalties
+@reexport using PenaltyFunctions
 
 import LearnBase: transform!, grad, grad!, params, update!
 import Transformations: input_node, output_node, totalcost, InputNode, SumNode, OutputNode
