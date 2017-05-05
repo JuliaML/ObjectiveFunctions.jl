@@ -2,6 +2,7 @@ __precompile__(true)
 
 module ObjectiveFunctions
 
+using Compat: @compat
 using Reexport
 @reexport using LearnBase
 @reexport using LossFunctions
@@ -19,7 +20,7 @@ export
     RegularizedObjective,
     objective
 
-abstract AbstractLossTransform{T} <: Transformation
+@compat abstract type AbstractLossTransform{T} <: Transformation end
 
 immutable NoLoss <: AbstractLossTransform{Void} end
 
@@ -41,12 +42,12 @@ immutable LossTransform{T,L<:Loss} <: AbstractLossTransform{T}
     target::SumNode{T,1}
     output::OutputNode{T,1}
 
-    function LossTransform(loss::Loss, nin::Int)
+    function (::Type{LossTransform{T, L}}){T, L <: Loss}(loss::Loss, nin::Int)
         input = InputNode(T, nin)
         target = InputNode(T, nin)
         output = OutputNode(T, 1)
         grad(output)[1] = one(T)  # ∂L/∂L == 1
-        new(loss, nin, input, target, output)
+        new{T, L}(loss, nin, input, target, output)
     end
 end
 
@@ -54,7 +55,7 @@ LossTransform{L<:Loss}(loss::L, nin::Int) = LossTransform{Float64, L}(loss, nin)
 
 # input and target are pre-populated... compute the output value as: ∑ loss(targetᵢ, inputᵢ)
 function transform!(lt::LossTransform)
-    lt.output.val[1] = sumvalue(lt.loss, value(lt.target), input_value(lt))
+    lt.output.val[1] = value(lt.loss, value(lt.target), input_value(lt), AvgMode.Sum())
     lt
 end
 
@@ -76,12 +77,12 @@ immutable CrossEntropy{T} <: AbstractLossTransform{T}
     target::SumNode{T,1}
     output::OutputNode{T,1}
 
-    function CrossEntropy(n::Int)
+    function (::Type{CrossEntropy{T}}){T}(n::Int)
         input = InputNode(T, n)
         target = InputNode(T, n)
         output = OutputNode(T, 1)
         grad(output)[:] = one(T)  # ∂L/∂L == 1
-        new(n, input, target, output)
+        new{T}(n, input, target, output)
     end
 end
 CrossEntropy(n::Int) = CrossEntropy{Float64}(n)
