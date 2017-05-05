@@ -6,7 +6,7 @@ using Base.Test
         t = Affine(nin, nout)
         l = L2DistLoss()
         λ = 1e-3
-        p = L2Penalty(λ)
+        p = scaled(L2Penalty(), λ)
         obj = objective(t, l, p)
         @show obj typeof(obj)
 
