@@ -2,4 +2,7 @@ julia 0.5-
 
 Reexport
 LearnBase
+LossFunctions
+PenaltyFunctions
+Transformations
 Compat 0.17  # for new type syntax
