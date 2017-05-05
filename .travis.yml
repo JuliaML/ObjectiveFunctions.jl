@@ -9,6 +9,7 @@ julia:
 notifications:
   email: false
 # uncomment the following lines to override the default test script
-#script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("ObjectiveFunctions"); Pkg.test("ObjectiveFunctions"; coverage=true)'
+script:
+ - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+ - julia -e 'Pkg.init(); Pkg.clone("https://github.com/JuliaML/Transformations.jl"); Pkg.build("Transformations")'
+ - julia -e 'Pkg.clone(pwd()); Pkg.build("ObjectiveFunctions"); Pkg.test("ObjectiveFunctions"; coverage=true)'
