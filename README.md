@@ -1,3 +1,7 @@
+# DEPRECATED
+
+This package is deprecated.
+
 # ObjectiveFunctions
 
 [![Build Status](https://travis-ci.org/JuliaML/ObjectiveFunctions.jl.svg?branch=master)](https://travis-ci.org/JuliaML/ObjectiveFunctions.jl)
